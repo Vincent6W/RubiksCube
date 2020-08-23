@@ -26,8 +26,8 @@
                 scene: null,
                 axes: null,
                 controls: null,
-                cubeSize: 16,
-                order: 3,
+                cubeSize: 12,
+                order: 4,
                 baseColor: 0x404040,
                 colors: ['#00ff00', '#0000ff', '#ffff00', '#ffffff', '#ff0000', '#ff8800'],
                 cubes: [],
@@ -46,6 +46,7 @@
                 },
                 startPoint: null,
                 movePoint: null,
+                startPoint2D: null,
             };
         },
         mounted () {
@@ -158,7 +159,7 @@
                 }
             },
             createCoverCube () {
-                let geometry = new THREE.BoxGeometry(this.cubeSize * 3, this.cubeSize * 3, this.cubeSize * 3);
+                let geometry = new THREE.BoxGeometry(this.cubeSize * this.order, this.cubeSize * this.order, this.cubeSize * this.order);
                 let material = new THREE.MeshBasicMaterial({ opacity: 0, transparent: true });
                 let cube = new THREE.Mesh(geometry, material);
                 cube.cubeType = 'coverCube';
@@ -203,6 +204,11 @@
             startCube (event) {
                 this.controls.enabled = false;
                 this.getIntersects(event);
+                let point = event.touches ? event.touches[0] : event;
+                this.startPoint2D = {
+                    x: point.clientX,
+                    y: point.clientY,
+                };
                 if (!this.isRotating && this.intersect) {
                     this.controls.enabled = false;
                     this.startPoint = this.intersect.point;
@@ -212,19 +218,22 @@
             },
             moveCube (event) {
                 if (this.startPoint) {
-                    this.getIntersects(event, true);
-                    if (!this.isRotating && this.intersect) {
-                        this.movePoint = this.intersect.point;
-                        if(!this.movePoint.equals(this.startPoint)){//和起始点不一样则意味着可以得到转动向量了
-                            this.isRotating = true;//转动标识置为true
-                            // let sub = this.movePoint.sub(this.startPoint);//计算转动向量
-                            let cross = new THREE.Vector3();
-                            cross.crossVectors(this.startPoint, this.movePoint);
-                            let direction = this.getDirection(cross);//获得方向
-                            let elements = this.getBoxes(this.intersect,direction);
-                            window.requestAnimFrame((timestamp) => {
-                                this.rotateAnimation(elements,direction,timestamp,0);
+                    let point = event.touches ? event.touches[0] : event;
+                    if (Math.sqrt(Math.pow((point.clientX - this.startPoint2D.x), 2) + Math.pow((point.clientY - this.startPoint2D.y), 2)) > 10) {
+                        this.getIntersects(event, true);
+                        if (!this.isRotating && this.intersect) {
+                            this.movePoint = this.intersect.point;
+                            if(!this.movePoint.equals(this.startPoint)){//和起始点不一样则意味着可以得到转动向量了
+                                this.isRotating = true;//转动标识置为true
+                                // let sub = this.movePoint.sub(this.startPoint);//计算转动向量
+                                let cross = new THREE.Vector3();
+                                cross.crossVectors(this.startPoint, this.movePoint);
+                                let direction = this.getDirection(cross);//获得方向
+                                let elements = this.getBoxes(this.intersect,direction);
+                                window.requestAnimFrame((timestamp) => {
+                                    this.rotateAnimation(elements,direction,timestamp,0);
                             });
+                            }
                         }
                     }
                 }
@@ -270,7 +279,6 @@
             getDirection (vector3) {
                 let direction;
                 let angleObj = {};
-
                 let normalize = this.normalize.clone();
                 // 排除绕法向量方向旋转的可能
                 for (let key in this.directions) {
