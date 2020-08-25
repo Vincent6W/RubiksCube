@@ -51,20 +51,12 @@
         },
         mounted () {
             this.createRenderer();
-
             this.createCamera();
-
             this.createScene();
-
             // this.createAxes();
-
-
             this.createRubik();
-
             this.createCoverCube();
-
             this.createLight();
-
             this.render();
             this.createOrbitController();
             this.createRayCaster();
@@ -76,6 +68,7 @@
                     antialias:true,
                 });
                 this.renderer.setSize( window.innerWidth, window.innerHeight );
+                this.renderer.setPixelRatio( window.devicePixelRatio );
                 this.$refs.container.appendChild( this.renderer.domElement );
                 window.addEventListener( 'resize', this.onWindowResize, false );
             },
@@ -125,6 +118,8 @@
                 this.colors.forEach((item) => {
                     let texture = new THREE.CanvasTexture(this.faces(item));
                     texture.needsUpdate = true;
+                    // 修改各项异性，解决侧面的纹理失真的问题(重要)
+                    texture.anisotropy = 16;
                     let material = new THREE.MeshLambertMaterial( { map: texture } );
                     materials.push(material);
                 });
@@ -172,9 +167,7 @@
                 canvas.height = 256;
                 let context = canvas.getContext('2d');
                 if (context) {
-                    //画一个宽高都是256的黑色正方形
-                    context.fillStyle = 'rgba(64,64,64,1)';
-                    context.fillRect(0, 0, 256, 256);
+                    // 魔方贴纸
                     context.rect(24, 24, 208, 208);
                     context.lineJoin = 'round';
                     context.lineWidth = 24;
@@ -232,7 +225,7 @@
                                 let elements = this.getBoxes(this.intersect,direction);
                                 window.requestAnimFrame((timestamp) => {
                                     this.rotateAnimation(elements,direction,timestamp,0);
-                            });
+                                });
                             }
                         }
                     }
@@ -399,7 +392,6 @@
                 let q = new THREE.Quaternion();
                 q.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), rad );
                 obj.quaternion.premultiply( q );
-
                 obj.position.y = Math.cos(rad)*y0-Math.sin(rad)*z0;
                 obj.position.z = Math.cos(rad)*z0+Math.sin(rad)*y0;
             },
